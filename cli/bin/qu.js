@@ -9,24 +9,45 @@ const args = process.argv.slice(3);
 if (!command) {
   console.log('Usage: qu <command> [options]');
   console.log('\nAvailable commands:');
-  console.log('  build              Build the application');
+  console.log('  build [options]    Build the application');
   console.log('  serve [options]    Watch and rebuild on file changes');
-  console.log('    --port, -p       Specify port (default: 4300)');
-  console.log('  help               Show this help message');
+  console.log('\nGlobal options:');
+  console.log('  -c, --configuration <env>  Specify environment (development/production)');
+  console.log('  -e, --environment <env>    Alias for --configuration');
+  console.log('\nBuild options:');
+  console.log('  -v, --verbose              Show detailed build logs');
+  console.log('\nServe options:');
+  console.log('  -p, --port <port>          Specify port (default: 4200)');
+  console.log('  -v, --verbose              Show detailed server logs');
+  console.log('\nOther commands:');
+  console.log('  help                       Show this help message');
   process.exit(0);
 }
 
 if (command === 'help' || command === '--help' || command === '-h') {
   console.log('Usage: qu <command> [options]');
   console.log('\nAvailable commands:');
-  console.log('  build              Build the application');
+  console.log('  build [options]    Build the application');
   console.log('  serve [options]    Watch and rebuild on file changes');
-  console.log('    --port, -p       Specify port (default: 4300)');
-  console.log('  help               Show this help message');
+  console.log('\nGlobal options:');
+  console.log('  -c, --configuration <env>  Specify environment (development/production)');
+  console.log('  -e, --environment <env>    Alias for --configuration');
+  console.log('\nBuild options:');
+  console.log('  -v, --verbose              Show detailed build logs');
+  console.log('\nServe options:');
+  console.log('  -p, --port <port>          Specify port (default: 4200)');
+  console.log('  -v, --verbose              Show detailed server logs');
+  console.log('\nOther commands:');
+  console.log('  help                       Show this help message');
   console.log('\nExamples:');
+  console.log('  qu build');
+  console.log('  qu build -c production');
+  console.log('  qu build -v');
+  console.log('  qu build -c production --verbose');
   console.log('  qu serve');
-  console.log('  qu serve --port 3000');
-  console.log('  qu serve -p 8080');
+  console.log('  qu serve -v');
+  console.log('  qu serve -c development --port 3000');
+  console.log('  qu serve -p 8080 --verbose');
   process.exit(0);
 }
 
@@ -49,7 +70,7 @@ if (command === 'build') {
   try {
     const cwd = process.cwd();
     const cliPath = findQuarcCliPath(cwd);
-    const buildScript = path.join(cliPath, 'build.ts');
+    const buildScript = path.join(cliPath, 'scripts', 'build.ts');
     const tsNodePath = path.join(cwd, 'node_modules', '.bin', 'ts-node');
     const buildArgs = args.join(' ');
     execSync(`${tsNodePath} ${buildScript} ${buildArgs}`, { stdio: 'inherit', cwd });
@@ -60,9 +81,10 @@ if (command === 'build') {
   try {
     const cwd = process.cwd();
     const cliPath = findQuarcCliPath(cwd);
-    const serveScript = path.join(cliPath, 'serve.ts');
+    const serveScript = path.join(cliPath, 'scripts', 'serve.ts');
     const tsNodePath = path.join(cwd, 'node_modules', '.bin', 'ts-node');
-    execSync(`${tsNodePath} ${serveScript}`, { stdio: 'inherit', cwd });
+    const serveArgs = args.join(' ');
+    execSync(`${tsNodePath} ${serveScript} ${serveArgs}`, { stdio: 'inherit', cwd });
   } catch (error) {
     process.exit(1);
   }

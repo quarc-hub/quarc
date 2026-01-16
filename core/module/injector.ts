@@ -61,6 +61,18 @@ export class Injector {
     }
 
     public createInstanceWithProviders<T>(classType: Type<T>, providers: Provider[]): T {
+        console.log('[DI] createInstanceWithProviders START', {
+            classType,
+            typeofClassType: typeof classType,
+            isFunction: typeof classType === 'function',
+            hasName: classType?.name,
+            originalName: (classType as any)?.__quarc_original_name__,
+            providers: providers.map(p => ({
+                provide: typeof p.provide === 'string' ? p.provide : p.provide?.name,
+                type: 'useValue' in p ? 'useValue' : 'useClass' in p ? 'useClass' : 'useFactory' in p ? 'useFactory' : 'useExisting'
+            }))
+        });
+
         if (!classType) {
             throw new Error(`[DI] createInstanceWithProviders called with undefined classType`);
         }
@@ -175,21 +187,32 @@ export class Injector {
     }
 
     private resolveDependency(token: any, providers: Provider[]): any {
+        console.log('[DI] resolveDependency', {
+            token,
+            typeofToken: typeof token,
+            tokenName: typeof token === 'string' ? token : (token as any).__quarc_original_name__ || token?.name,
+            isFunction: typeof token === 'function',
+        });
+
         const tokenName = typeof token === 'string' ? token : (token as any).__quarc_original_name__ || token.name;
 
         const provider = this.findProvider(token, providers);
         if (provider) {
+            console.log('[DI] Found provider for token', tokenName);
             return this.resolveProviderValue(provider, providers);
         }
 
         if (this.sharedInstances[tokenName]) {
+            console.log('[DI] Found in sharedInstances', tokenName);
             return this.sharedInstances[tokenName];
         }
 
         if (this.instanceCache[tokenName]) {
+            console.log('[DI] Found in instanceCache', tokenName);
             return this.instanceCache[tokenName];
         }
 
+        console.log('[DI] Creating new instance for token', tokenName);
         return this.createInstanceWithProviders(token, providers);
     }
 
