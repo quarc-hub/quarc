@@ -1,9 +1,6 @@
 import { Type } from "../index";
+import { Provider } from "../angular/app-config";
 
-export interface LocalProvider {
-    provide: Type<any> | any;
-    useValue: any;
-}
 
 export class Injector {
     private static instance: Injector;
@@ -28,76 +25,56 @@ export class Injector {
     }
 
     public createInstance<T>(classType: Type<T>): T {
-        return this.createInstanceWithProviders(classType, {});
+        return this.createInstanceWithProviders(classType, []);
     }
 
-    public createInstanceWithProvidersOld<T>(classType: Type<T>, localProviders: Record<string, any>): T {
-        if (!classType) {
-            throw new Error(`[DI] createInstance called with undefined classType`);
-        }
+    private findProvider(token: any, providers: Provider[]): Provider | undefined {
+        const tokenName = typeof token === 'string' ? token : (token as any).__quarc_original_name__ || token.name;
 
-        const key = (classType as any).__quarc_original_name__ || classType.name;
-        // Prevent instantiation of built-in classes
-        if (key === "HTMLElement") {
-            throw new Error(`[DI] Cannot create instance of HTMLElement`);
-        }
-
-        // First check local cache
-        if (this.instanceCache[key]) {
-            return this.instanceCache[key];
-        }
-
-        // Then check shared instances (cross-build sharing)
-        if (this.sharedInstances[key]) {
-            const sharedInstance = this.sharedInstances[key];
-            return sharedInstance;
-        }
-
-        try {
-            const dependencies = this.resolveDependencies(classType);
-            const instance = new classType(...dependencies);
-            this.instanceCache[key] = instance;
-            this.sharedInstances[key] = instance;
-            return instance;
-        } catch (error) {
-            const className = this.getReadableClassName(classType);
-            const dependencyInfo = this.getDependencyInfo(classType);
-            throw new Error(`[DI] Failed to create instance of "${className}": ${(error as Error).message}\nDependencies: ${dependencyInfo}`);
-        }
+        return providers.find(p => {
+            const providerName = typeof p.provide === 'string'
+                ? p.provide
+                : (p.provide as any).__quarc_original_name__ || p.provide.name;
+            return providerName === tokenName;
+        });
     }
 
-    private convertLocalProvidersToRecord(localProviders: LocalProvider[]): Record<string, any> {
-        const record: Record<string, any> = {};
-
-        for (const provider of localProviders) {
-            const key = typeof provider.provide === 'string'
-                ? provider.provide
-                : (provider.provide as any).__quarc_original_name__ || provider.provide.name;
-
-            record[key] = provider.useValue;
+    private resolveProviderValue(provider: Provider, providers: Provider[]): any {
+        if ('useValue' in provider) {
+            return provider.useValue;
+        } else if ('useFactory' in provider && provider.useFactory) {
+            return provider.useFactory();
+        } else if ('useExisting' in provider && provider.useExisting) {
+            const existingToken = provider.useExisting;
+            const existingProvider = this.findProvider(existingToken, providers);
+            if (existingProvider) {
+                return this.resolveProviderValue(existingProvider, providers);
+            }
+            const existingKey = typeof existingToken === 'string'
+                ? existingToken
+                : (existingToken as any).__quarc_original_name__ || existingToken.name;
+            return this.sharedInstances[existingKey] || this.instanceCache[existingKey];
+        } else if ('useClass' in provider && provider.useClass) {
+            return this.createInstanceWithProviders(provider.useClass, providers);
         }
-
-        return record;
+        return undefined;
     }
 
-    public createInstanceWithProviders<T>(classType: Type<T>, localProviders: Record<string, any>): T;
-    public createInstanceWithProviders<T>(classType: Type<T>, localProviders: LocalProvider[]): T;
-    public createInstanceWithProviders<T>(classType: Type<T>, localProviders: Record<string, any> | LocalProvider[]): T {
+    public createInstanceWithProviders<T>(classType: Type<T>, providers: Provider[]): T {
         if (!classType) {
             throw new Error(`[DI] createInstanceWithProviders called with undefined classType`);
         }
 
-        // Convert LocalProvider[] to Record<string, any> if needed
-        const providersRecord = Array.isArray(localProviders)
-            ? this.convertLocalProvidersToRecord(localProviders)
-            : localProviders;
-
         try {
-            const dependencies = this.resolveDependenciesWithProviders(classType, providersRecord);
+            console.log({
+                className: (classType as any).__quarc_original_name__ || classType.name,
+                classType,
+            });
+            const dependencies = this.resolveDependenciesWithProviders(classType, providers);
             /** /
             console.log({
                 className: (classType as any).__quarc_original_name__ || classType.name,
-                localProviders: providersRecord,
+                providers,
                 dependencies,
                 classType,
             });
@@ -189,50 +166,31 @@ export class Injector {
         });
     }
 
-    private resolveDependenciesWithProviders(classType: Type<any>, localProviders: Record<string, any>): any[] {
+    private resolveDependenciesWithProviders(classType: Type<any>, providers: Provider[]): any[] {
         const tokens = this.getConstructorParameterTypes(classType);
 
-        const contextProviders: Record<string, any> = {
-            ...this.sharedInstances,
-            ...this.instanceCache,
-            ...localProviders,
-        };
-
         return tokens.map(token => {
-            const dep = this.resolveDependency(token, contextProviders, localProviders);
-            const depName = dep.__quarc_original_name__ || dep.name;
-            return dep;
+            return this.resolveDependency(token, providers);
         });
     }
 
-    private resolveDependency(token: any, contextProviders: Record<string, any>, localProviders: Record<string, any>): any {
-            const tokenName = typeof token === 'string' ? token : (token as any).__quarc_original_name__ || token.name;
+    private resolveDependency(token: any, providers: Provider[]): any {
+        const tokenName = typeof token === 'string' ? token : (token as any).__quarc_original_name__ || token.name;
 
-            // First check local providers (they have highest priority)
-            if (localProviders[tokenName]) {
-                const providerValue = localProviders[tokenName];
+        const provider = this.findProvider(token, providers);
+        if (provider) {
+            return this.resolveProviderValue(provider, providers);
+        }
 
-                // If the provider value is a constructor (type), create a new instance
-                if (typeof providerValue === 'function' && providerValue.prototype && providerValue.prototype.constructor === providerValue) {
-                    return this.createInstanceWithProviders(providerValue, localProviders);
-                }
+        if (this.sharedInstances[tokenName]) {
+            return this.sharedInstances[tokenName];
+        }
 
-                return providerValue;
-            }
+        if (this.instanceCache[tokenName]) {
+            return this.instanceCache[tokenName];
+        }
 
-            // Then check other context providers
-            if (contextProviders[tokenName]) {
-                const providerValue = contextProviders[tokenName];
-
-                // If the provider value is a constructor (type), create a new instance
-                if (typeof providerValue === 'function' && providerValue.prototype && providerValue.prototype.constructor === providerValue) {
-                    return this.createInstanceWithProviders(providerValue, localProviders);
-                }
-
-                return providerValue;
-            }
-
-            return this.createInstanceWithProviders(token, localProviders);
+        return this.createInstanceWithProviders(token, providers);
     }
 
     private getConstructorParameterTypes(classType: Type<any>): any[] {

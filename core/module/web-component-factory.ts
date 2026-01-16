@@ -1,4 +1,5 @@
-import { IComponent, WebComponent, Injector, LocalProvider, ComponentType, ComponentUtils, ChangeDetectorRef } from '../index';
+import { IComponent, WebComponent, Injector, ComponentType, ComponentUtils, ChangeDetectorRef } from '../index';
+import { Provider } from '../angular/app-config';
 import { ActivatedRoute } from '../../router';
 import '../global';
 
@@ -90,23 +91,24 @@ export class WebComponentFactory {
         this.getWebComponentInstances().set(webComponentId, webComponent);
         //const changeDetectorRef = new ChangeDetectorRef(webComponentId);
 
-        const localProviders: Record<string, any> = {
-            HTMLElement: element,
-            //ChangeDetectorRef: changeDetectorRef,
-            ActivatedRoute: this.findActivatedRouteFromElement(element),
-        };
+        const localProviders: Provider[] = [
+            { provide: HTMLElement, useValue: element },
+            { provide: ActivatedRoute, useValue: this.findActivatedRouteFromElement(element) },
+        ];
 
         const componentMeta = componentType._quarcComponent?.[0];
         if (componentMeta?.providers) {
             for (const providerType of componentMeta.providers) {
-                if (typeof providerType === 'function' && !localProviders[providerType]) {
-                    const providerInstance = injector.createInstanceWithProviders(providerType, localProviders);
-                    const provider = providerType.__quarc_original_name__ || providerType.name || providerType.constructor?.name || providerType;
-                    localProviders[provider] = providerInstance;
+                if (typeof providerType === 'function') {
+                    const alreadyProvided = localProviders.some(p => p.provide === providerType);
+                    if (!alreadyProvided) {
+                        localProviders.push({ provide: providerType, useClass: providerType });
+                    }
                 }
             }
         }
 
+        console.log({localProviders});
         return injector.createInstanceWithProviders<IComponent>(componentType, localProviders);
     }
 

@@ -1,4 +1,4 @@
-import { Directive, IDirective, input, IComponent, InputSignal } from "../../core";
+import { Directive, IDirective, input } from "../../core";
 import { Router } from "../angular/router";
 import { ActivatedRoute } from "../angular/types";
 
@@ -6,7 +6,7 @@ import { ActivatedRoute } from "../angular/types";
     selector: '[routerLink]',
 })
 export class RouterLink implements IDirective {
-    static __quarc_original_name__ = "RouterLink";
+    //static __quarc_original_name__ = "RouterLink";
 
     public routerLink = input<string | string[]>();
 

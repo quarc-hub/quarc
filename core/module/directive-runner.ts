@@ -2,12 +2,12 @@ import {
     DirectiveType,
     DirectiveRegistry,
     Injector,
-    LocalProvider,
     IDirective,
     effect,
     EffectRef,
     WritableSignal,
 } from '../index';
+import { Provider } from '../angular/app-config';
 import { ActivatedRoute } from '../../router/angular/types';
 import { WebComponent } from './web-component';
 
@@ -60,7 +60,7 @@ export class DirectiveRunner {
         element: HTMLElement,
     ): DirectiveInstance | null {
         const injector = Injector.get();
-        const localProviders: LocalProvider[] = [
+        const localProviders: Provider[] = [
             { provide: HTMLElement, useValue: element },
         ];
 

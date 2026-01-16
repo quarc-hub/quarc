@@ -1,7 +1,7 @@
 // Core types and classes
 export { Core } from "./core";
 export type { Type, ComponentType, DirectiveType } from "./module/type";
-export { Injector, LocalProvider } from "./module/injector";
+export { Injector } from "./module/injector";
 
 // Component system
 export { IComponent, ViewEncapsulation } from "./module/component";
@@ -29,6 +29,6 @@ export { signal, computed, effect } from "./angular/signals";
 export type { Signal, WritableSignal, EffectRef, CreateSignalOptions, CreateEffectOptions } from "./angular/signals";
 
 // types
-export type { ApplicationConfig, EnvironmentProviders, PluginConfig, PluginRoutingMode } from "./angular/app-config";
+export type { ApplicationConfig, EnvironmentProviders, PluginConfig, PluginRoutingMode, Provider } from "./angular/app-config";
 export { ComponentUtils } from "./utils/component-utils";
 export { TemplateFragment } from "./module/template-renderer";
