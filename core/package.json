@@ -1,0 +1,11 @@
+{
+  "name": "@quarc/core",
+  "version": "1.0.0",
+  "description": "Lightweight Angular-like framework core",
+  "main": "main.ts",
+  "types": "main.ts",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

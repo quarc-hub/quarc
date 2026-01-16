@@ -1,0 +1,13 @@
+{
+  "name": "@quarc/platform-browser",
+  "version": "1.0.0",
+  "description": "Lightweight Angular-like framework platform-browser",
+  "main": "main.ts",
+  "types": "main.ts",
+  "dependencies": {
+    "@quarc/core": "file:../core"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

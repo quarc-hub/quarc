@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Template Renderer Tests</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Template Renderer Tests</h1>
+    <div id="results"></div>
+    <div id="test-container" style="display: none;"></div>
+
+    <script>
+        // Symulacja interfejsu HTMLElement z __quarcContext
+        const results = document.getElementById('results');
+        const testContainer = document.getElementById('test-container');
+
+        function log(message, data) {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${message}</strong><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            results.appendChild(div);
+        }
+
+        function test(name, fn) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            try {
+                const result = fn();
+                div.className += ' pass';
+                div.innerHTML = `✅ ${name}<pre>${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (e) {
+                div.className += ' fail';
+                div.innerHTML = `❌ ${name}<pre>${e.message}\n${e.stack}</pre>`;
+            }
+            results.appendChild(div);
+        }
+
+        // Test 1: Sprawdź czy __quarcContext można ustawić na elemencie
+        test('__quarcContext można ustawić na HTMLElement', () => {
+            const div = document.createElement('div');
+            div.__quarcContext = { theme: { name: 'Light', value: 'light' } };
+            return {
+                hasContext: !!div.__quarcContext,
+                context: div.__quarcContext,
+            };
+        });
+
+        // Test 2: Sprawdź czy __quarcContext jest zachowany po appendChild
+        test('__quarcContext jest zachowany po appendChild', () => {
+            const parent = document.createElement('div');
+            const child = document.createElement('span');
+            child.__quarcContext = { item: 'test' };
+
+            parent.appendChild(child);
+
+            return {
+                hasContext: !!child.__quarcContext,
+                context: child.__quarcContext,
+                parentHasChild: parent.contains(child),
+            };
+        });
+
+        // Test 3: Sprawdź czy __quarcContext jest zachowany po insertBefore
+        test('__quarcContext jest zachowany po insertBefore', () => {
+            const parent = document.createElement('div');
+            const marker = document.createComment('end');
+            parent.appendChild(marker);
+
+            const child = document.createElement('span');
+            child.__quarcContext = { item: 'test' };
+
+            parent.insertBefore(child, marker);
+
+            return {
+                hasContext: !!child.__quarcContext,
+                context: child.__quarcContext,
+                childBeforeMarker: child.nextSibling === marker,
+            };
+        });
+
+        // Test 4: Symulacja renderForItemInPlace dla SELECT
+        test('renderForItemInPlace dla SELECT', () => {
+            const select = document.createElement('select');
+            const endMarker = document.createComment('ngFor-end');
+            select.appendChild(endMarker);
+
+            const template = '<option [attr.value]="theme.value" [innerHTML]="theme.name"></option>';
+            const loopContext = { theme: { name: 'Light', value: 'light' } };
+
+            const tempContainer = document.createElement('div');
+            tempContainer.innerHTML = template.trim();
+
+            const allElements = Array.from(tempContainer.querySelectorAll('*'));
+            for (const el of allElements) {
+                el.__quarcContext = loopContext;
+            }
+
+            const children = Array.from(tempContainer.children);
+            for (const child of children) {
+                child.__quarcContext = loopContext;
+                select.insertBefore(child, endMarker);
+            }
+
+            // Sprawdź czy option ma kontekst
+            const option = select.querySelector('option');
+
+            return {
+                selectChildren: select.children.length,
+                optionExists: !!option,
+                optionHasContext: !!option?.__quarcContext,
+                optionContext: option?.__quarcContext,
+                optionParent: option?.parentElement?.tagName,
+            };
+        });
+
+        // Test 5: Sprawdź czy kontekst jest zachowany po przeniesieniu do innego kontenera
+        test('Kontekst zachowany po przeniesieniu między kontenerami', () => {
+            // Symulacja: renderedContent -> tempContainer
+            const renderedContent = document.createDocumentFragment();
+            const select = document.createElement('select');
+            renderedContent.appendChild(select);
+
+            const endMarker = document.createComment('ngFor-end');
+            select.appendChild(endMarker);
+
+            // Symulacja renderForItemInPlace
+            const option = document.createElement('option');
+            option.__quarcContext = { theme: { name: 'Dark', value: 'dark' } };
+            select.insertBefore(option, endMarker);
+
+            // Sprawdź przed przeniesieniem
+            const beforeMove = {
+                optionHasContext: !!option.__quarcContext,
+                optionContext: option.__quarcContext,
+            };
+
+            // Symulacja przeniesienia do tempContainer (jak w render())
+            const tempContainer = document.createElement('div');
+            while (renderedContent.firstChild) {
+                tempContainer.appendChild(renderedContent.firstChild);
+            }
+
+            // Sprawdź po przeniesieniu
+            const optionAfter = tempContainer.querySelector('option');
+            const afterMove = {
+                optionExists: !!optionAfter,
+                optionHasContext: !!optionAfter?.__quarcContext,
+                optionContext: optionAfter?.__quarcContext,
+                optionParent: optionAfter?.parentElement?.tagName,
+            };
+
+            return { beforeMove, afterMove };
+        });
+
+        // Test 6: Sprawdź buildContextForElement
+        test('buildContextForElement - traversowanie w górę DOM', () => {
+            const container = document.createElement('div');
+            container.component = { themes: [] }; // Symulacja komponentu
+
+            const select = document.createElement('select');
+            container.appendChild(select);
+
+            const option = document.createElement('option');
+            option.__quarcContext = { theme: { name: 'Light', value: 'light' } };
+            select.appendChild(option);
+
+            // Symulacja buildContextForElement
+            const contextChain = [];
+            let current = option;
+            const traversed = [];
+
+            while (current) {
+                traversed.push(`${current.tagName}[hasContext=${!!current.__quarcContext}, hasComponent=${!!current.component}]`);
+                if (current.__quarcContext) {
+                    contextChain.unshift(current.__quarcContext);
+                }
+                if (current.component) {
+                    break;
+                }
+                current = current.parentElement;
+            }
+
+            return {
+                traversed,
+                contextChain,
+                foundContext: contextChain.length > 0,
+            };
+        });
+
+        // Test 7: Pełna symulacja flow z render()
+        test('Pełna symulacja flow render() z SELECT', () => {
+            const template = `
+                <select>
+                    <ng-container *ngFor="let theme of themes">
+                        <option [attr.value]="theme.value" [innerHTML]="theme.name"></option>
+                    </ng-container>
+                </select>
+            `;
+
+            // Krok 1: Parsowanie template
+            const templateElement = document.createElement('template');
+            templateElement.innerHTML = template;
+            const renderedContent = templateElement.content.cloneNode(true);
+
+            // Sprawdź strukturę po parsowaniu
+            const selectInFragment = renderedContent.querySelector('select');
+            const ngContainerInSelect = selectInFragment?.querySelector('ng-container');
+
+            return {
+                selectExists: !!selectInFragment,
+                ngContainerExists: !!ngContainerInSelect,
+                ngContainerParent: ngContainerInSelect?.parentElement?.tagName,
+                selectChildren: selectInFragment?.children.length,
+                selectChildTags: Array.from(selectInFragment?.children || []).map(c => c.tagName),
+            };
+        });
+
+        // Test 8: Sprawdź czy przeglądarka poprawnie parsuje ng-container w SELECT
+        test('Parsowanie ng-container wewnątrz SELECT', () => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <select>
+                    <ng-container>
+                        <option value="1">One</option>
+                    </ng-container>
+                </select>
+            `;
+
+            const select = div.querySelector('select');
+            const ngContainer = div.querySelector('ng-container');
+            const option = div.querySelector('option');
+
+            return {
+                selectExists: !!select,
+                ngContainerExists: !!ngContainer,
+                ngContainerParent: ngContainer?.parentElement?.tagName,
+                optionExists: !!option,
+                optionParent: option?.parentElement?.tagName,
+                selectInnerHTML: select?.innerHTML,
+            };
+        });
+    </script>
+</body>
+</html>

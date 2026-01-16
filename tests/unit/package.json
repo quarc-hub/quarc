@@ -1,0 +1,20 @@
+{
+  "name": "quarc-tests",
+  "version": "1.0.0",
+  "description": "Test suite for Quarc Framework",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "npx ts-node run-tests.ts",
+    "test:e2e": "echo 'E2E tests not yet implemented'",
+    "test:all": "npm run test",
+    "test:browser": "open test-style-injection.html",
+    "test:functionality": "npx ts-node test-functionality.ts",
+    "test:style": "npx ts-node test-style-injection.ts",
+    "test:lifecycle": "npx ts-node test-lifecycle.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./compiled",
+    "resolveJsonModule": true,
+    "declaration": false,
+    "baseUrl": "../..",
+    "paths": {
+      "@quarc/cli/*": ["cli/*"],
+      "@quarc/core": ["core/main"],
+      "@quarc/core/*": ["core/*"],
+      "@quarc/rxjs": ["rxjs/main"],
+      "@quarc/rxjs/*": ["rxjs/*"],
+      "@quarc/router": ["router/main"],
+      "@quarc/router/*": ["router/*"]
+    }
+  },
+  "include": [
+    "*.ts",
+    "../../cli/**/*.ts",
+    "../../router/**/*.ts",
+    "../../core/**/*.ts",
+    "../../rxjs/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "compiled"
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
+}

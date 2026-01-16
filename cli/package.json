@@ -1,0 +1,26 @@
+{
+  "name": "@quarc/cli",
+  "version": "1.0.0",
+  "description": "Lightweight Angular-like framework CLI",
+  "main": "build.ts",
+  "bin": {
+    "qu": "./bin/qu.js",
+    "qrw": "./bin/qu.js"
+  },
+  "scripts": {
+    "build": "ts-node build.ts"
+  },
+  "dependencies": {
+    "cli-table3": "^0.6.3",
+    "sass": "^1.69.5",
+    "esbuild": "^0.19.11",
+    "terser": "^5.26.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.10.6",
+    "@types/ws": "^8.5.10"
+  }
+}
