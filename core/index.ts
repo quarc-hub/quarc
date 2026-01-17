@@ -27,6 +27,7 @@ export { OnInit, OnDestroy } from "./angular/lifecycle";
 export { ChangeDetectorRef } from "./angular/change-detector-ref";
 export { signal, computed, effect } from "./angular/signals";
 export type { Signal, WritableSignal, EffectRef, CreateSignalOptions, CreateEffectOptions } from "./angular/signals";
+export { inject, setCurrentInjector } from "./angular/inject";
 
 // types
 export type { ApplicationConfig, EnvironmentProviders, PluginConfig, PluginRoutingMode, Provider } from "./angular/app-config";

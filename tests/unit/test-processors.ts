@@ -241,7 +241,7 @@ export class TestComponent {
         source: input,
     });
 
-    assertContains(result.source, 'static __di_params__ = [UserService, HttpClient]');
+    assertContains(result.source, "static __di_params__ = ['UserService', 'HttpClient']");
 });
 
 test('DI: includes HTMLElement param', async () => {
@@ -256,7 +256,7 @@ export class TestComponent {
         source: input,
     });
 
-    assertContains(result.source, 'static __di_params__ = [HTMLElement, MyService]');
+    assertContains(result.source, "static __di_params__ = ['HTMLElement', 'MyService']");
 });
 
 test('DI: no params - no modification', async () => {
@@ -290,7 +290,7 @@ export class ChildComponent extends BaseComponent {
         source: input,
     });
 
-    assertContains(result.source, 'static __di_params__ = [MyService]');
+    assertContains(result.source, "static __di_params__ = ['MyService']");
 });
 
 // ============================================================================

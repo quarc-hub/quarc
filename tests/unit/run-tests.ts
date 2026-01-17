@@ -16,6 +16,7 @@ console.log('🧪 Uruchamianie wszystkich testów Quarc Framework\n');
 // test-style-injection.ts wymaga środowiska przeglądarki (HTMLElement)
 const testFiles = [
     'test-processors.ts',
+    'test-inject.ts',
     'test-functionality.ts',
     'test-lifecycle.ts',
     'test-signals-reactivity.ts',

@@ -8,6 +8,7 @@ import { DIProcessor } from './processors/di-processor';
 import { ClassDecoratorProcessor } from './processors/class-decorator-processor';
 import { SignalTransformerProcessor, SignalTransformerError } from './processors/signal-transformer-processor';
 import { DirectiveCollectorProcessor } from './processors/directive-collector-processor';
+import { InjectProcessor } from './processors/inject-processor';
 
 export class BuildError extends Error {
     constructor(
@@ -30,6 +31,7 @@ export class LiteTransformer {
             new SignalTransformerProcessor(),
             new TemplateProcessor(),
             new StyleProcessor(),
+            new InjectProcessor(),
             new DIProcessor(),
             new DirectiveCollectorProcessor(),
         ];
