@@ -160,6 +160,7 @@ class Server extends BaseBuilder {
   }
 
   private proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse): void {
+    console.log(`[Proxy] ${req.method} ${req.url} -> ${targetUrl}`);
     const parsedUrl = new URL(targetUrl);
     const protocol = parsedUrl.protocol === 'https:' ? https : http;
 
@@ -173,13 +174,14 @@ class Server extends BaseBuilder {
         },
       },
       (proxyRes) => {
+        console.log(`[Proxy] Response: ${proxyRes.statusCode} for ${req.url}`);
         res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
         proxyRes.pipe(res);
       },
     );
 
     proxyReq.on('error', (err) => {
-      console.error('Proxy error:', err.message);
+      console.error(`[Proxy] Error for ${req.url}:`, err.message);
       res.writeHead(502);
       res.end('Bad Gateway');
     });

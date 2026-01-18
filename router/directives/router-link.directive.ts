@@ -15,7 +15,6 @@ export class RouterLink implements IDirective {
         public _nativeElement: HTMLElement,
         private activatedRoute?: ActivatedRoute,
     ) {
-        console.log({ routerLink: this.routerLink() });
         this._nativeElement.addEventListener('click', (event) => {
             this.onClick(event);
         });
@@ -44,7 +43,6 @@ export class RouterLink implements IDirective {
 
         this.router.navigate(commands, extras).then(success => {
         }).catch(error => {
-            console.error('RouterLink CLICK - Navigation failed:', error);
         });
     }
 

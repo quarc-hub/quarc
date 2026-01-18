@@ -56,10 +56,20 @@ export class ControlFlowTransformer {
         closeParenIndex--;
 
         const openBraceIndex = content.indexOf('{', closeParenIndex);
-        if (openBraceIndex === -1) return null;
+        if (openBraceIndex === -1) {
+            // Handle case where there's no opening brace - create a simple block
+            return {
+                match: content.substring(ifIndex, closeParenIndex + 1) + '{ }',
+                startIndex: ifIndex,
+                endIndex: closeParenIndex + 1
+            };
+        }
 
         let endIndex = this.findIfBlockEnd(content, openBraceIndex);
-        if (endIndex === -1) return null;
+        if (endIndex === -1) {
+            // For incomplete blocks, try to process what we have
+            endIndex = content.length;
+        }
 
         return {
             match: content.substring(ifIndex, endIndex),
@@ -79,7 +89,21 @@ export class ControlFlowTransformer {
             index++;
         }
 
-        if (braceCount !== 0) return -1;
+        // If we couldn't find matching closing brace, try to handle incomplete blocks
+        if (braceCount !== 0) {
+            // For incomplete blocks, find the end of the current line or next @if/@for statement
+            const remainingContent = content.substring(startBraceIndex);
+            const nextIfIndex = remainingContent.indexOf('@if', 1);
+            const nextForIndex = remainingContent.indexOf('@for', 1);
+            const lineEndIndex = remainingContent.indexOf('\n');
+
+            let endIndex = content.length;
+            if (nextIfIndex !== -1) endIndex = Math.min(endIndex, startBraceIndex + nextIfIndex);
+            if (nextForIndex !== -1) endIndex = Math.min(endIndex, startBraceIndex + nextForIndex);
+            if (lineEndIndex !== -1) endIndex = Math.min(endIndex, startBraceIndex + lineEndIndex);
+
+            return endIndex;
+        }
 
         while (index < content.length) {
             const remaining = content.substring(index);
@@ -165,7 +189,21 @@ export class ControlFlowTransformer {
         if (forIndex === -1) return null;
 
         const openParenIndex = content.indexOf('(', forIndex);
-        const closeParenIndex = content.indexOf(')', openParenIndex);
+        if (openParenIndex === -1) return null;
+
+        // Properly count nested parentheses
+        let parenCount = 1;
+        let closeParenIndex = openParenIndex + 1;
+        while (closeParenIndex < content.length && parenCount > 0) {
+            const char = content[closeParenIndex];
+            if (char === '(') parenCount++;
+            else if (char === ')') parenCount--;
+            closeParenIndex++;
+        }
+
+        if (parenCount !== 0) return null;
+        closeParenIndex--; // Move back to the closing paren
+
         const openBraceIndex = content.indexOf('{', closeParenIndex);
 
         if (openBraceIndex === -1) return null;
@@ -194,7 +232,21 @@ export class ControlFlowTransformer {
         if (startIndex === -1) return null;
 
         const openParenIndex = match.indexOf('(', startIndex);
-        const closeParenIndex = match.indexOf(')', openParenIndex);
+        if (openParenIndex === -1) return null;
+
+        // Properly count nested parentheses
+        let parenCount = 1;
+        let closeParenIndex = openParenIndex + 1;
+        while (closeParenIndex < match.length && parenCount > 0) {
+            const char = match[closeParenIndex];
+            if (char === '(') parenCount++;
+            else if (char === ')') parenCount--;
+            closeParenIndex++;
+        }
+
+        if (parenCount !== 0) return null;
+        closeParenIndex--; // Move back to the closing paren
+
         const openBraceIndex = match.indexOf('{', closeParenIndex);
 
         if (openBraceIndex === -1) return null;
@@ -219,7 +271,8 @@ export class ControlFlowTransformer {
         const forPart = parts[0].trim();
         const trackPart = parts[1]?.trim();
 
-        const forMatch = forPart.match(/^\s*([^\s]+)\s+of\s+([^\s]+)\s*$/);
+        // Match: variable of iterable (iterable can contain parentheses, dots, etc.)
+        const forMatch = forPart.match(/^\s*(\w+)\s+of\s+(.+)\s*$/);
         if (!forMatch) return null;
 
         const variable = forMatch[1].trim();
@@ -248,7 +301,10 @@ export class ControlFlowTransformer {
             ngForExpression += `; trackBy: ${forBlock.trackBy}`;
         }
 
-        return `<ng-container *ngFor="${ngForExpression}">${forBlock.content}</ng-container>`;
+        // Recursively transform nested @if and @for blocks in content
+        const transformedContent = this.transform(forBlock.content);
+
+        return `<ng-container *ngFor="${ngForExpression}">${transformedContent}</ng-container>`;
     }
 
     private parseBlocks(match: string): ControlFlowBlock[] {
@@ -273,6 +329,12 @@ export class ControlFlowTransformer {
             const { condition, aliasVariable } = this.parseConditionWithAlias(conditionStr.trim());
 
             const openBraceIndex = match.indexOf('{', closeParenIndex);
+            if (openBraceIndex === -1) {
+                // Incomplete @if block - no opening brace found
+                blocks.push({ condition, content: '', aliasVariable });
+                return blocks;
+            }
+
             let braceCount = 1;
             let closeBraceIndex = openBraceIndex + 1;
 
@@ -282,11 +344,22 @@ export class ControlFlowTransformer {
                 else if (char === '}') braceCount--;
                 closeBraceIndex++;
             }
-            closeBraceIndex--;
 
-            const content = match.substring(openBraceIndex + 1, closeBraceIndex);
+            let content = '';
+            if (braceCount === 0) {
+                // Complete block found
+                closeBraceIndex--;
+                content = match.substring(openBraceIndex + 1, closeBraceIndex);
+                index = closeBraceIndex + 1;
+            } else {
+                // Incomplete block - take everything after opening brace
+                content = match.substring(openBraceIndex + 1);
+                index = match.length;
+            }
+
+            // Trim leading whitespace from content
+            content = content.trimStart();
             blocks.push({ condition, content, aliasVariable });
-            index = closeBraceIndex + 1;
         }
 
         while (index < match.length) {
@@ -311,6 +384,13 @@ export class ControlFlowTransformer {
                 const { condition, aliasVariable } = this.parseConditionWithAlias(conditionStr.trim());
 
                 const openBraceIndex = match.indexOf('{', closeParenIndex);
+                if (openBraceIndex === -1) {
+                    // Incomplete @else if block - no opening brace found
+                    blocks.push({ condition, content: '', aliasVariable });
+                    index = match.length;
+                    break;
+                }
+
                 let braceCount = 1;
                 let closeBraceIndex = openBraceIndex + 1;
 
@@ -320,11 +400,22 @@ export class ControlFlowTransformer {
                     else if (char === '}') braceCount--;
                     closeBraceIndex++;
                 }
-                closeBraceIndex--;
 
-                const content = match.substring(openBraceIndex + 1, closeBraceIndex);
+                let content = '';
+                if (braceCount === 0) {
+                    // Complete block found
+                    closeBraceIndex--;
+                    content = match.substring(openBraceIndex + 1, closeBraceIndex);
+                    index = closeBraceIndex + 1;
+                } else {
+                    // Incomplete block - take everything after opening brace
+                    content = match.substring(openBraceIndex + 1);
+                    index = match.length;
+                }
+
+                // Trim leading whitespace from content
+                content = content.trimStart();
                 blocks.push({ condition, content, aliasVariable });
-                index = closeBraceIndex + 1;
             } else if (elseMatch) {
                 const openBraceIndex = index + elseMatch[0].length - 1;
                 let braceCount = 1;
@@ -336,11 +427,22 @@ export class ControlFlowTransformer {
                     else if (char === '}') braceCount--;
                     closeBraceIndex++;
                 }
-                closeBraceIndex--;
 
-                const content = match.substring(openBraceIndex + 1, closeBraceIndex);
+                let content = '';
+                if (braceCount === 0) {
+                    // Complete block found
+                    closeBraceIndex--;
+                    content = match.substring(openBraceIndex + 1, closeBraceIndex);
+                    index = closeBraceIndex + 1;
+                } else {
+                    // Incomplete block - take everything after opening brace
+                    content = match.substring(openBraceIndex + 1);
+                    index = match.length;
+                }
+
+                // Trim leading whitespace from content
+                content = content.trimStart();
                 blocks.push({ condition: null, content });
-                index = closeBraceIndex + 1;
             } else {
                 break;
             }
@@ -368,10 +470,13 @@ export class ControlFlowTransformer {
             const block = blocks[i];
             const condition = this.buildCondition(block.condition, negated);
 
+            // Recursively transform nested @if and @for blocks in content
+            const transformedContent = this.transform(block.content);
+
             if (block.aliasVariable) {
-                result += `<ng-container *ngIf="${condition}; let ${block.aliasVariable}">${block.content}</ng-container>`;
+                result += `<ng-container *ngIf="${condition}; let ${block.aliasVariable}">${transformedContent}</ng-container>`;
             } else {
-                result += `<ng-container *ngIf="${condition}">${block.content}</ng-container>`;
+                result += `<ng-container *ngIf="${condition}">${transformedContent}</ng-container>`;
             }
 
             if (i < blocks.length - 1) {

@@ -35,11 +35,8 @@ async function tryLoadExternalScripts(urls: string | string[]): Promise<void> {
             await loadExternalScript(url);
             return;
         } catch {
-            console.warn(`[External] Could not load from: ${url}`);
         }
     }
-
-    console.info("[External] No external scripts loaded - app continues without enhancements");
 }
 
 export async function bootstrapApplication(

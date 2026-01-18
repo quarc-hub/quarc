@@ -24,7 +24,6 @@ export class WebComponentFactory {
 
         const componentMeta = componentType._quarcComponent?.[0];
         if (!componentMeta) {
-            console.warn(`Component ${componentType.name} has no _quarcComponent metadata`);
             return false;
         }
 
@@ -69,7 +68,6 @@ export class WebComponentFactory {
             this.componentTypes.set(tagName, componentType);
             return true;
         } catch (error) {
-            console.warn(`Failed to register component ${tagName}:`, error);
             return false;
         }
     }
@@ -108,7 +106,6 @@ export class WebComponentFactory {
             }
         }
 
-        console.log({localProviders});
         return injector.createInstanceWithProviders<IComponent>(componentType, localProviders);
     }
 

@@ -261,6 +261,167 @@ test('ControlFlowTransformer: @if @else if oba z aliasem', () => {
            result.includes('*ngIf="!(primary()) && !(secondary())"');
 });
 
+// Test 25: ControlFlowTransformer - niekompletny @if (bez zamknięcia)
+test('ControlFlowTransformer: niekompletny @if', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (range.name) { content';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="range.name">content</ng-container>');
+});
+
+// Test 26: ControlFlowTransformer - niekompletny @if na końcu
+test('ControlFlowTransformer: niekompletny @if na końcu', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '} @if (prepared.sensor.loading) { ';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="prepared.sensor.loading"></ng-container>');
+});
+
+// Test 27: ControlFlowTransformer - niekompletny @if bez nawiasu klamrowego
+test('ControlFlowTransformer: niekompletny @if bez nawiasu klamrowego', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (condition) ';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="condition"></ng-container>');
+});
+
+// Test 28: ControlFlowTransformer - zagnieżdżony @if wewnątrz @for
+test('ControlFlowTransformer: zagnieżdżony @if wewnątrz @for', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = `@for (item of items) {
+        @if (item.active) {
+            <span>{{ item.name }}</span>
+        }
+    }`;
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let item of items">') &&
+           result.includes('<ng-container *ngIf="item.active">') &&
+           !result.includes('@if') &&
+           !result.includes('@for');
+});
+
+// Test 29: ControlFlowTransformer - zagnieżdżony @for wewnątrz @if
+test('ControlFlowTransformer: zagnieżdżony @for wewnątrz @if', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = `@if (hasItems) {
+        @for (item of items; track item.id) {
+            <div>{{ item }}</div>
+        }
+    }`;
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="hasItems">') &&
+           result.includes('<ng-container *ngFor="let item of items; trackBy: item.id">') &&
+           !result.includes('@if') &&
+           !result.includes('@for');
+});
+
+// Test 30: ControlFlowTransformer - wielokrotnie zagnieżdżone @if wewnątrz @for
+test('ControlFlowTransformer: wielokrotnie zagnieżdżone @if wewnątrz @for', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = `@for (range of ranges; track $index) {
+        <div>
+            @if (range.name) {
+                <span>{{ range.name }}</span>
+            }
+            <span>{{ range.min }}</span>
+        </div>
+    }`;
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let range of ranges; trackBy: $index">') &&
+           result.includes('<ng-container *ngIf="range.name">') &&
+           !result.includes('@if') &&
+           !result.includes('@for');
+});
+
+// Test 31: ControlFlowTransformer - kompleksowy przypadek z user template
+test('ControlFlowTransformer: kompleksowy przypadek użytkownika', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = `@if (prepared.sensor.ranges) {
+    <span>
+        @for (range of prepared.sensor.ranges; track $index) {
+            <div>
+                @if (range.name) {
+                    <span>{{ range.name }}</span>
+                }
+                <span>{{ range.min }}</span>
+                <span>{{ range.max }}</span>
+            </div>
+        }
+    </span>
+}`;
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="prepared.sensor.ranges">') &&
+           result.includes('<ng-container *ngFor="let range of prepared.sensor.ranges; trackBy: $index">') &&
+           result.includes('<ng-container *ngIf="range.name">') &&
+           !result.includes('@if') &&
+           !result.includes('@for');
+});
+
+// Test 32: ControlFlowTransformer - głęboko zagnieżdżone @if/@for/@if
+test('ControlFlowTransformer: głęboko zagnieżdżone @if/@for/@if', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = `@if (level1) {
+        @for (item of items; track item.id) {
+            @if (item.visible) {
+                <div>{{ item.name }}</div>
+            }
+        }
+    }`;
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="level1">') &&
+           result.includes('<ng-container *ngFor="let item of items; trackBy: item.id">') &&
+           result.includes('<ng-container *ngIf="item.visible">') &&
+           !result.includes('@if') &&
+           !result.includes('@for');
+});
+
+// Test 33: ControlFlowTransformer - @for z funkcją w iterable
+test('ControlFlowTransformer: @for z funkcją w iterable', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@for (item of getItems(); track item.id) { <div>{{ item }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let item of getItems(); trackBy: item.id">') &&
+           !result.includes('@for');
+});
+
+// Test 34: ControlFlowTransformer - @for z zagnieżdżonymi nawiasami w funkcji
+test('ControlFlowTransformer: @for z zagnieżdżonymi nawiasami w funkcji', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@for (prepared of preparedSensors(); track prepared.sensor.id) { <div>{{ prepared.sensor.name }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let prepared of preparedSensors(); trackBy: prepared.sensor.id">') &&
+           result.includes('prepared.sensor.name') &&
+           !result.includes('@for');
+});
+
+// Test 35: ControlFlowTransformer - @for z metodą obiektu w iterable
+test('ControlFlowTransformer: @for z metodą obiektu w iterable', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@for (item of data.getItems(); track $index) { <span>{{ item }}</span> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let item of data.getItems(); trackBy: $index">') &&
+           !result.includes('@for');
+});
+
+// Test 36: ControlFlowTransformer - @for z wieloma zagnieżdżonymi nawiasami
+test('ControlFlowTransformer: @for z wieloma zagnieżdżonymi nawiasami', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@for (item of service.getData(filter(value())); track item.id) { <div>{{ item }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let item of service.getData(filter(value())); trackBy: item.id">') &&
+           !result.includes('@for');
+});
+
+// Test 37: ControlFlowTransformer - @for z funkcją i złożonym trackBy
+test('ControlFlowTransformer: @for z funkcją i złożonym trackBy', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@for (range of prepared.sensor.ranges; track $index) { <div>{{ range.name }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngFor="let range of prepared.sensor.ranges; trackBy: $index">') &&
+           result.includes('range.name') &&
+           !result.includes('@for');
+});
+
 console.log('\n=== PODSUMOWANIE ===');
 console.log(`✅ Testy zaliczone: ${passedTests}`);
 console.log(`❌ Testy niezaliczone: ${failedTests}`);

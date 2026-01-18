@@ -235,7 +235,6 @@ export class TemplateFragment {
         const isForIn = !!forInMatch;
 
         if (!match) {
-            console.warn('Invalid ngFor expression:', ngForExpression);
             parent.insertBefore(endMarker, ngContainer);
             ngContainer.remove();
             return;
@@ -376,7 +375,6 @@ export class TemplateFragment {
      */
     rerenderFragment(markerIndex: number): void {
         if (markerIndex < 0 || markerIndex >= this.ngContainerMarkers.length) {
-            console.warn('Invalid marker index:', markerIndex);
             return;
         }
 
