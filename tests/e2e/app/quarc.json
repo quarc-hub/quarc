@@ -1,0 +1,57 @@
+{
+    "environment": "production",
+    "build": {
+        "actions": {
+            "prebuild": [],
+            "postbuild": []
+        },
+        "minifyNames": true,
+        "scripts": [],
+        "externalEntryPoints": [],
+        "styles": [],
+        "externalStyles": [],
+        "limits": {
+            "total": {
+                "warning": "100 KB",
+                "error": "500 KB"
+            },
+            "main": {
+                "warning": "50 KB",
+                "error": "150 KB"
+            },
+            "sourceMaps": {
+                "warning": "200 KB",
+                "error": "500 KB"
+            },
+            "components": {
+                "warning": "10 KB",
+                "error": "50 KB"
+            }
+        }
+    },
+    "serve": {
+        "actions": {
+            "preserve": [],
+            "postserve": []
+        },
+        "staticPaths": [],
+        "proxy": {}
+    },
+    "environments": {
+        "development": {
+            "treatWarningsAsErrors": false,
+            "minifyNames": false,
+            "generateSourceMaps": true,
+            "compressed": false,
+            "devServer": {
+                "port": 4200
+            }
+        },
+        "production": {
+            "treatWarningsAsErrors": false,
+            "minifyNames": false,
+            "generateSourceMaps": false,
+            "compressed": false
+        }
+    }
+}

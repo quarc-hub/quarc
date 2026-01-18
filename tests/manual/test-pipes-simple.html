@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Pipes Simple</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #444; }
+        .pass { background: #1e3a1e; }
+        .fail { background: #3a1e1e; }
+    </style>
+</head>
+<body>
+    <h1>Test: Pipes - Diagnostyka</h1>
+    <div id="app"></div>
+    <div id="results"></div>
+
+    <script>
+        // Sprawdzenie czy template został przetransformowany
+        console.log('=== Checking transformed template ===');
+
+        // Symulacja tego co powinno być w przetransformowanym template
+        const testTemplate = `<span [inner-text]="this._pipes?.['json']?.transform(123)"></span>`;
+        console.log('Expected template:', testTemplate);
+
+        // Symulacja komponentu
+        const component = {
+            _pipes: {
+                json: {
+                    transform: (value) => {
+                        console.log('JsonPipe.transform called with:', value);
+                        return JSON.stringify(value, null, 2);
+                    }
+                }
+            }
+        };
+
+        // Symulacja ewaluacji wyrażenia
+        const expr = "this._pipes?.['json']?.transform(123)";
+        console.log('Expression to evaluate:', expr);
+
+        try {
+            const evalFunc = new Function('c', `with(c){return ${expr}}`);
+            const result = evalFunc(component);
+            console.log('Evaluation result:', result);
+
+            document.getElementById('results').innerHTML = `
+                <div class="test ${result ? 'pass' : 'fail'}">
+                    <h3>Test 1: Manual evaluation</h3>
+                    <div>Expression: ${expr}</div>
+                    <div>Result: ${result}</div>
+                    <div>Status: ${result ? '✓ PASS' : '✗ FAIL'}</div>
+                </div>
+            `;
+        } catch (e) {
+            console.error('Evaluation error:', e);
+            document.getElementById('results').innerHTML = `
+                <div class="test fail">
+                    <h3>Test 1: Manual evaluation</h3>
+                    <div>Error: ${e.message}</div>
+                    <div>Status: ✗ FAIL</div>
+                </div>
+            `;
+        }
+
+        // Test 2: Sprawdzenie czy optional chaining działa
+        console.log('\n=== Test 2: Optional chaining ===');
+        const obj = {};
+        console.log('obj._pipes?.json:', obj._pipes?.['json']);
+        console.log('obj._pipes?.json?.transform:', obj._pipes?.['json']?.transform);
+
+        const obj2 = { _pipes: { json: { transform: (v) => String(v) } } };
+        console.log('obj2._pipes?.json?.transform(123):', obj2._pipes?.['json']?.transform(123));
+    </script>
+</body>
+</html>

@@ -34,3 +34,6 @@ export { inject, setCurrentInjector } from "./angular/inject";
 export type { ApplicationConfig, EnvironmentProviders, PluginConfig, PluginRoutingMode, Provider } from "./angular/app-config";
 export { ComponentUtils } from "./utils/component-utils";
 export { TemplateFragment } from "./module/template-renderer";
+
+// Pipes
+export { UpperCasePipe, LowerCasePipe, JsonPipe, CamelCasePipe, PascalCasePipe, SnakeCasePipe, KebabCasePipe, SubstrPipe, DatePipe } from "./pipes/index";

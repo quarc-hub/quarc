@@ -25,10 +25,16 @@ device.name || 'Unnamed'
 
 ## Rozwiązanie
 
+### 1. Naprawa rozróżniania operatorów logicznych
+
 Dodano metodę `splitByPipe()` która poprawnie rozróżnia:
 - Pojedynczy `|` - separator pipe
 - Podwójny `||` - operator logiczny OR
 - Podwójny `&&` - operator logiczny AND
+
+### 2. Naprawa kontekstu ewaluacji (this._pipes → _pipes)
+
+Zmieniono generowany kod z `this._pipes` na `_pipes`, ponieważ w kontekście `with(c)` używanym w `template-renderer.ts`, `this` odnosi się do globalnego obiektu, a nie do komponentu. Używając bezpośrednio `_pipes`, właściwość jest dostępna z kontekstu komponentu `c`.
 
 ### Zmieniony plik
 
@@ -50,13 +56,13 @@ private transformPipeExpression(expression: string): string {
 
         if (colonIndex === -1) {
             const pipeName = pipePart.trim();
-            result = `this._pipes?.['${pipeName}']?.transform(${result})`;
+            result = `_pipes?.['${pipeName}']?.transform(${result})`;
         } else {
             const pipeName = pipePart.substring(0, colonIndex).trim();
             const argsStr = pipePart.substring(colonIndex + 1).trim();
             const args = argsStr.split(':').map(arg => arg.trim());
             const argsJoined = args.join(', ');
-            result = `this._pipes?.['${pipeName}']?.transform(${result}, ${argsJoined})`;
+            result = `_pipes?.['${pipeName}']?.transform(${result}, ${argsJoined})`;
         }
     }
 
@@ -129,7 +135,7 @@ Utworzono testy w `/web/quarc/tests/unit/`:
 {{ value | uppercase }}
 
 // Output
-<span [inner-text]="this._pipes?.['uppercase']?.transform(value)"></span>
+<span [inner-text]="_pipes?.['uppercase']?.transform(value)"></span>
 ```
 
 ### Kombinacja || i pipe
@@ -138,7 +144,7 @@ Utworzono testy w `/web/quarc/tests/unit/`:
 {{ (value || 'default') | uppercase }}
 
 // Output
-<span [inner-text]="this._pipes?.['uppercase']?.transform((value || 'default'))"></span>
+<span [inner-text]="_pipes?.['uppercase']?.transform((value || 'default'))"></span>
 ```
 
 ### Łańcuch pipes
@@ -147,7 +153,7 @@ Utworzono testy w `/web/quarc/tests/unit/`:
 {{ value | lowercase | slice:0:5 }}
 
 // Output
-<span [inner-text]="this._pipes?.['slice']?.transform(this._pipes?.['lowercase']?.transform(value), 0, 5)"></span>
+<span [inner-text]="_pipes?.['slice']?.transform(_pipes?.['lowercase']?.transform(value), 0, 5)"></span>
 ```
 
 ## Weryfikacja

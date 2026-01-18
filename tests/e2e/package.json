@@ -1,0 +1,16 @@
+{
+  "name": "quarc-e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E tests for Quarc pipes",
+  "scripts": {
+    "postinstall": "cd app && npm install",
+    "preserve": "cd app && npm install",
+    "test": "npx ts-node run-e2e-tests.ts",
+    "test:debug": "npx ts-node run-e2e-tests.ts --inspect"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+export { UpperCasePipe } from './uppercase.pipe';
+export { LowerCasePipe } from './lowercase.pipe';
+export { JsonPipe } from './json.pipe';
+export { CamelCasePipe } from './camelcase.pipe';
+export { PascalCasePipe } from './pascalcase.pipe';
+export { SnakeCasePipe } from './snakecase.pipe';
+export { KebabCasePipe } from './kebabcase.pipe';
+export { SubstrPipe } from './substr.pipe';
+export { DatePipe } from './date.pipe';

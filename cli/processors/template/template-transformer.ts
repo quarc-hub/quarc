@@ -103,13 +103,13 @@ export class TemplateTransformer {
 
             if (colonIndex === -1) {
                 const pipeName = pipePart.trim();
-                result = `this._pipes?.['${pipeName}']?.transform(${result})`;
+                result = `_pipes?.['${pipeName}']?.transform(${result})`;
             } else {
                 const pipeName = pipePart.substring(0, colonIndex).trim();
                 const argsStr = pipePart.substring(colonIndex + 1).trim();
                 const args = argsStr.split(':').map(arg => arg.trim());
                 const argsJoined = args.join(', ');
-                result = `this._pipes?.['${pipeName}']?.transform(${result}, ${argsJoined})`;
+                result = `_pipes?.['${pipeName}']?.transform(${result}, ${argsJoined})`;
             }
         }
 

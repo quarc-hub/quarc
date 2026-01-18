@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test E2E: Pipes</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            background: #252526;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #4ec9b0;
+        }
+        .expected {
+            color: #6a9955;
+        }
+        .actual {
+            color: #ce9178;
+        }
+        #test-results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #252526;
+            border: 2px solid #444;
+        }
+        .pass { color: #4ec9b0; }
+        .fail { color: #f48771; }
+    </style>
+</head>
+<body>
+    <h1>Test E2E: Quarc Pipes</h1>
+    <div id="app-container"></div>
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { Component, signal, bootstrapApplication } from '../../core/index.js';
+        import {
+            UpperCasePipe,
+            LowerCasePipe,
+            JsonPipe,
+            CamelCasePipe,
+            PascalCasePipe,
+            SnakeCasePipe,
+            KebabCasePipe,
+            SubstrPipe,
+            DatePipe
+        } from '../../core/pipes/index.js';
+
+        @Component({
+            selector: 'test-pipes-app',
+            template: `
+                <div class="test-section">
+                    <h3>UpperCasePipe</h3>
+                    <div>Input: "hello world"</div>
+                    <div class="expected">Expected: HELLO WORLD</div>
+                    <div class="actual">Actual: {{ text | uppercase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>LowerCasePipe</h3>
+                    <div>Input: "HELLO WORLD"</div>
+                    <div class="expected">Expected: hello world</div>
+                    <div class="actual">Actual: {{ upperText | lowercase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>JsonPipe - Number</h3>
+                    <div>Input: 123</div>
+                    <div class="expected">Expected: 123</div>
+                    <div class="actual">Actual: <pre style="display: inline;">{{ number | json }}</pre></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>JsonPipe - String</h3>
+                    <div>Input: "string"</div>
+                    <div class="expected">Expected: "string"</div>
+                    <div class="actual">Actual: <pre style="display: inline;">{{ str | json }}</pre></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>JsonPipe - Boolean</h3>
+                    <div>Input: true</div>
+                    <div class="expected">Expected: true</div>
+                    <div class="actual">Actual: <pre style="display: inline;">{{ bool | json }}</pre></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>JsonPipe - Object</h3>
+                    <div>Input: {name: "Test", value: 123}</div>
+                    <div class="expected">Expected: JSON object</div>
+                    <div class="actual">Actual: <pre>{{ obj | json }}</pre></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>CamelCasePipe</h3>
+                    <div>Input: "hello-world"</div>
+                    <div class="expected">Expected: helloWorld</div>
+                    <div class="actual">Actual: {{ kebabText | camelcase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>PascalCasePipe</h3>
+                    <div>Input: "hello-world"</div>
+                    <div class="expected">Expected: HelloWorld</div>
+                    <div class="actual">Actual: {{ kebabText | pascalcase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>SnakeCasePipe</h3>
+                    <div>Input: "helloWorld"</div>
+                    <div class="expected">Expected: hello_world</div>
+                    <div class="actual">Actual: {{ camelText | snakecase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>KebabCasePipe</h3>
+                    <div>Input: "helloWorld"</div>
+                    <div class="expected">Expected: hello-world</div>
+                    <div class="actual">Actual: {{ camelText | kebabcase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>SubstrPipe</h3>
+                    <div>Input: "hello world" (0, 5)</div>
+                    <div class="expected">Expected: hello</div>
+                    <div class="actual">Actual: {{ text | substr:0:5 }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>DatePipe - Short</h3>
+                    <div>Input: Date</div>
+                    <div class="expected">Expected: MM/DD/YY, H:MM AM/PM</div>
+                    <div class="actual">Actual: {{ date | date:'short' }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>DatePipe - Custom</h3>
+                    <div>Input: Date</div>
+                    <div class="expected">Expected: YYYY-MM-DD</div>
+                    <div class="actual">Actual: {{ date | date:'yyyy-MM-dd' }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>Pipe Chain</h3>
+                    <div>Input: "HELLO WORLD" | lowercase | camelcase</div>
+                    <div class="expected">Expected: helloWorld</div>
+                    <div class="actual">Actual: {{ upperText | lowercase | camelcase }}</div>
+                </div>
+
+                <div class="test-section">
+                    <h3>Pipe with || operator</h3>
+                    <div>Input: null || "default" | uppercase</div>
+                    <div class="expected">Expected: DEFAULT</div>
+                    <div class="actual">Actual: {{ nullValue || 'default' | uppercase }}</div>
+                </div>
+            `,
+            imports: [
+                UpperCasePipe,
+                LowerCasePipe,
+                JsonPipe,
+                CamelCasePipe,
+                PascalCasePipe,
+                SnakeCasePipe,
+                KebabCasePipe,
+                SubstrPipe,
+                DatePipe
+            ],
+        })
+        class TestPipesApp {
+            text = signal('hello world');
+            upperText = signal('HELLO WORLD');
+            number = signal(123);
+            str = signal('string');
+            bool = signal(true);
+            obj = signal({ name: 'Test', value: 123 });
+            kebabText = signal('hello-world');
+            camelText = signal('helloWorld');
+            date = signal(new Date('2024-01-15T14:30:45'));
+            nullValue = signal(null);
+        }
+
+        bootstrapApplication(TestPipesApp, {
+            providers: [],
+        });
+
+        setTimeout(() => {
+            const results = document.getElementById('test-results');
+            const sections = document.querySelectorAll('.test-section');
+
+            let html = '<h2>Test Results</h2>';
+            let passed = 0;
+            let failed = 0;
+
+            sections.forEach((section, index) => {
+                const title = section.querySelector('h3').textContent;
+                const actual = section.querySelector('.actual');
+                const hasContent = actual && actual.textContent.trim().length > 'Actual: '.length;
+                const hasUndefined = actual && actual.textContent.includes('undefined');
+
+                if (hasContent && !hasUndefined) {
+                    html += `<div class="pass">✓ ${title}</div>`;
+                    passed++;
+                } else {
+                    html += `<div class="fail">✗ ${title} - ${hasUndefined ? 'undefined' : 'no content'}</div>`;
+                    failed++;
+                }
+            });
+
+            html += `<h3>Summary: ${passed} passed, ${failed} failed</h3>`;
+            results.innerHTML = html;
+
+            console.log('Test Results:', { passed, failed });
+        }, 1000);
+    </script>
+</body>
+</html>
