@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test @if z aliasem - Quarc Framework</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-case {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test @if z aliasem - Quarc Framework</h1>
+    <p>Ta strona testuje obsługę składni <code>@if (condition; as variable)</code> w runtime.</p>
+
+    <div class="test-case">
+        <h3>Test 1: Prosty alias</h3>
+        <p>Template: <code>@if (device(); as dev) { &lt;div&gt;{{ dev.name }}&lt;/div&gt; }</code></p>
+        <test-component-1></test-component-1>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 2: Alias z null (nie powinno renderować)</h3>
+        <p>Template: <code>@if (nullValue(); as val) { &lt;div&gt;Content&lt;/div&gt; }</code></p>
+        <test-component-2></test-component-2>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 3: @if @else z aliasem</h3>
+        <p>Template: <code>@if (getUser(); as user) { &lt;div&gt;{{ user.name }}&lt;/div&gt; } @else { &lt;div&gt;Brak użytkownika&lt;/div&gt; }</code></p>
+        <test-component-3></test-component-3>
+    </div>
+
+    <script type="module">
+        // Przykładowy kod komponentów do testowania
+        // W rzeczywistej aplikacji te komponenty byłyby skompilowane przez Quarc CLI
+
+        console.log('=== Test @if z aliasem ===');
+        console.log('Sprawdź czy elementy są poprawnie renderowane z dostępem do zmiennych aliasów');
+        console.log('Otwórz DevTools i sprawdź __quarcContext na elementach DOM');
+    </script>
+
+    <h2>Instrukcje testowania</h2>
+    <ol>
+        <li>Skompiluj komponenty używając Quarc CLI</li>
+        <li>Otwórz DevTools (F12)</li>
+        <li>Sprawdź czy elementy mają właściwość <code>__quarcContext</code> z aliasami</li>
+        <li>Zweryfikuj czy wartości są poprawnie wyświetlane</li>
+    </ol>
+
+    <h2>Oczekiwane rezultaty</h2>
+    <ul>
+        <li>Test 1: Powinien wyświetlić nazwę urządzenia z obiektu zwróconego przez <code>device()</code></li>
+        <li>Test 2: Nie powinien renderować żadnej zawartości (null jest falsy)</li>
+        <li>Test 3: Powinien wyświetlić nazwę użytkownika lub "Brak użytkownika"</li>
+    </ul>
+</body>
+</html>

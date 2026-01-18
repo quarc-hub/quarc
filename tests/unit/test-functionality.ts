@@ -217,6 +217,50 @@ test('ControlFlowTransformer: @for i @if razem', () => {
            result.includes('Active item:');
 });
 
+// Test 20: ControlFlowTransformer - @if z aliasem (as variable)
+test('ControlFlowTransformer: @if (condition; as variable)', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (device(); as dev) { <div>{{ dev.name }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('<ng-container *ngIf="device(); let dev">') &&
+           result.includes('<div>{{ dev.name }}</div>');
+});
+
+// Test 21: ControlFlowTransformer - @if @else if z aliasem
+test('ControlFlowTransformer: @if @else if z aliasem', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (getUser(); as user) { <div>{{ user.name }}</div> } @else if (getGuest(); as guest) { <div>{{ guest.id }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('*ngIf="getUser(); let user"') &&
+           result.includes('*ngIf="!(getUser()) && getGuest(); let guest"');
+});
+
+// Test 22: ControlFlowTransformer - @if z zagnieżdżonymi nawiasami w warunku
+test('ControlFlowTransformer: @if z zagnieżdżonymi nawiasami', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (getData(getValue()); as data) { <div>{{ data }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('*ngIf="getData(getValue()); let data"');
+});
+
+// Test 23: ControlFlowTransformer - @if z aliasem i białymi znakami
+test('ControlFlowTransformer: @if z aliasem i białymi znakami', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (  device()  ;  as   dev  ) { <div>{{ dev.name }}</div> }';
+    const result = transformer.transform(input);
+    return result.includes('*ngIf="device(); let dev"');
+});
+
+// Test 24: ControlFlowTransformer - @if z aliasem w @else if
+test('ControlFlowTransformer: @if @else if oba z aliasem', () => {
+    const transformer = new ControlFlowTransformer();
+    const input = '@if (primary(); as p) { <div>{{ p }}</div> } @else if (secondary(); as s) { <div>{{ s }}</div> } @else { <div>None</div> }';
+    const result = transformer.transform(input);
+    return result.includes('*ngIf="primary(); let p"') &&
+           result.includes('*ngIf="!(primary()) && secondary(); let s"') &&
+           result.includes('*ngIf="!(primary()) && !(secondary())"');
+});
+
 console.log('\n=== PODSUMOWANIE ===');
 console.log(`✅ Testy zaliczone: ${passedTests}`);
 console.log(`❌ Testy niezaliczone: ${failedTests}`);

@@ -145,7 +145,7 @@ test('transformAll: combined transformations', () => {
     assertContains(output, '*ngIf="isVisible"');
     assertContains(output, '[class]="myClass"');
     assertContains(output, '(click)="handleClick()"');
-    assertContains(output, '[innerText]="message()"');
+    assertContains(output, '[inner-text]="message()"');
 });
 
 // ============================================================================

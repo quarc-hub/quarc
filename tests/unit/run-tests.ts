@@ -13,7 +13,7 @@ const testDir = __dirname;
 console.log('🧪 Uruchamianie wszystkich testów Quarc Framework\n');
 
 // Lista plików testowych (tylko testy działające w Node.js)
-// test-style-injection.ts wymaga środowiska przeglądarki (HTMLElement)
+// test-style-injection.ts i test-ngif-alias.ts wymagają środowiska przeglądarki (HTMLElement)
 const testFiles = [
     'test-processors.ts',
     'test-inject.ts',

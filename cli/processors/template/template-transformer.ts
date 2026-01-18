@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { ControlFlowTransformer } from '../../helpers/control-flow-transformer';
 
 export interface TransformResult {
     content: string;
@@ -7,6 +8,7 @@ export interface TransformResult {
 }
 
 export class TemplateTransformer {
+    private controlFlowTransformer = new ControlFlowTransformer();
     transformInterpolation(content: string): string {
         let result = content;
 
@@ -83,21 +85,7 @@ export class TemplateTransformer {
     }
 
     transformControlFlowIf(content: string): string {
-        let result = content;
-        let modified = true;
-
-        while (modified) {
-            modified = false;
-            result = result.replace(
-                /@if\s*\(([^)]+)\)\s*\{([\s\S]*?)\}(?:\s*@else\s+if\s*\(([^)]+)\)\s*\{([\s\S]*?)\})*(?:\s*@else\s*\{([\s\S]*?)\})?/,
-                (match) => {
-                    modified = true;
-                    return this.parseIfBlock(match);
-                },
-            );
-        }
-
-        return result;
+        return this.controlFlowTransformer.transform(content);
     }
 
     transformControlFlowFor(content: string): string {
@@ -177,57 +165,6 @@ export class TemplateTransformer {
         }
 
         return fs.promises.readFile(fullPath, 'utf8');
-    }
-
-    private parseIfBlock(match: string): string {
-        const blocks: Array<{ condition: string | null; content: string }> = [];
-        let remaining = match;
-
-        const ifMatch = remaining.match(/@if\s*\(([^)]+)\)\s*\{([\s\S]*?)\}/);
-        if (ifMatch) {
-            blocks.push({ condition: ifMatch[1].trim(), content: ifMatch[2] });
-            remaining = remaining.substring(ifMatch[0].length);
-        }
-
-        let elseIfMatch;
-        const elseIfRegex = /@else\s+if\s*\(([^)]+)\)\s*\{([\s\S]*?)\}/g;
-        while ((elseIfMatch = elseIfRegex.exec(remaining)) !== null) {
-            blocks.push({ condition: elseIfMatch[1].trim(), content: elseIfMatch[2] });
-        }
-
-        const elseMatch = remaining.match(/@else\s*\{([\s\S]*?)\}$/);
-        if (elseMatch) {
-            blocks.push({ condition: null, content: elseMatch[1] });
-        }
-
-        return this.buildIfDirectives(blocks);
-    }
-
-    private buildIfDirectives(blocks: Array<{ condition: string | null; content: string }>): string {
-        const negated: string[] = [];
-        let result = '';
-
-        for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
-            let condition: string;
-
-            if (block.condition === null) {
-                condition = negated.map(c => `!(${c})`).join(' && ');
-            } else if (negated.length > 0) {
-                condition = negated.map(c => `!(${c})`).join(' && ') + ` && ${block.condition}`;
-            } else {
-                condition = block.condition;
-            }
-
-            result += `<ng-container *ngIf="${condition}">${block.content}</ng-container>`;
-            if (i < blocks.length - 1) result += '\n';
-
-            if (block.condition) {
-                negated.push(block.condition);
-            }
-        }
-
-        return result;
     }
 
     private extractForBlock(content: string, startIndex: number): { header: string; body: string; endIndex: number } | null {

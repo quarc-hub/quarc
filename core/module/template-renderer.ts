@@ -149,12 +149,11 @@ export class TemplateFragment {
         if (ngForAttr) {
             // Handle *ngFor directive
             this.processNgForDirective(ngContainer, ngForAttr, parent, endMarker);
-        } else if (ngIfAttr && !this.evaluateConditionWithContext(ngIfAttr, ngContainer.__quarcContext)) {
-            // Condition is false - don't render content, just add end marker
-            parent.insertBefore(endMarker, ngContainer);
-            ngContainer.remove();
+        } else if (ngIfAttr) {
+            // Handle *ngIf directive with optional 'let variable' syntax
+            this.processNgIfDirective(ngContainer, ngIfAttr, parent, endMarker);
         } else {
-            // Condition is true or no condition - render content between markers
+            // No condition - render content between markers
             while (ngContainer.firstChild) {
                 parent.insertBefore(ngContainer.firstChild, ngContainer);
             }
@@ -163,6 +162,67 @@ export class TemplateFragment {
         }
     }
 
+
+    private processNgIfDirective(ngContainer: HTMLElement, ngIfExpression: string, parent: Node, endMarker: Comment): void {
+        const parentContext = ngContainer.__quarcContext;
+        const { condition, aliasVariable } = this.parseNgIfExpression(ngIfExpression);
+
+        try {
+            const value = this.evaluateExpressionWithContext(condition, parentContext);
+
+            if (!value) {
+                parent.insertBefore(endMarker, ngContainer);
+                ngContainer.remove();
+                return;
+            }
+
+            if (aliasVariable) {
+                const ctx = { ...parentContext, [aliasVariable]: value };
+                const content = ngContainer.childNodes;
+                const nodes: Node[] = [];
+
+                while (content.length > 0) {
+                    nodes.push(content[0]);
+                    parent.insertBefore(content[0], ngContainer);
+                }
+
+                for (const node of nodes) {
+                    if (node.nodeType === 1) {
+                        (node as HTMLElement).__quarcContext = ctx;
+                        this.propagateContextToChildren(node as HTMLElement, ctx);
+                    }
+                }
+            } else {
+                while (ngContainer.firstChild) {
+                    parent.insertBefore(ngContainer.firstChild, ngContainer);
+                }
+            }
+
+            parent.insertBefore(endMarker, ngContainer);
+            ngContainer.remove();
+        } catch {
+            parent.insertBefore(endMarker, ngContainer);
+            ngContainer.remove();
+        }
+    }
+
+    private parseNgIfExpression(expression: string): { condition: string; aliasVariable?: string } {
+        const letMatch = expression.match(/^(.+);\s*let\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*$/);
+        if (letMatch) {
+            return {
+                condition: letMatch[1].trim(),
+                aliasVariable: letMatch[2].trim()
+            };
+        }
+        return { condition: expression.trim() };
+    }
+
+    private propagateContextToChildren(element: HTMLElement, ctx: any): void {
+        const children = element.querySelectorAll('*');
+        for (const child of Array.from(children)) {
+            (child as HTMLElement).__quarcContext = ctx;
+        }
+    }
 
     private processNgForDirective(ngContainer: HTMLElement, ngForExpression: string, parent: Node, endMarker: Comment): void {
         const parts = ngForExpression.split(';').map(part => part.trim());
