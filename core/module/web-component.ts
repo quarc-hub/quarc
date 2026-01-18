@@ -8,6 +8,7 @@ import {
     DirectiveInstance,
     effect,
     EffectRef,
+    PipeRegistry,
 } from '../index';
 
 interface QuarcScopeRegistry {
@@ -107,8 +108,29 @@ export class WebComponent extends HTMLElement {
             this.setAttribute(`_nghost-${this.runtimeScopeId}`, '');
         }
 
+        this.initializePipes();
+
         this._initialized = true;
         this.renderComponent();
+    }
+
+    private initializePipes(): void {
+        if (!this.componentInstance || !this.componentType) return;
+
+        const pipes = this.componentType._quarcPipes || [];
+        const pipeRegistry = PipeRegistry.get();
+        const pipeInstances: Record<string, any> = {};
+
+        for (const pipeType of pipes) {
+            pipeRegistry.register(pipeType);
+            const metadata = pipeRegistry.getPipeMetadata(pipeType);
+            if (metadata) {
+                const pipeInstance = new pipeType();
+                pipeInstances[metadata.name] = pipeInstance;
+            }
+        }
+
+        (this.componentInstance as any)._pipes = pipeInstances;
     }
 
     renderComponent(): void {

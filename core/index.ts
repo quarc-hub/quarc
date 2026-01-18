@@ -11,11 +11,12 @@ export { WebComponent } from "./module/web-component";
 export { WebComponentFactory } from "./module/web-component-factory";
 export { DirectiveRegistry } from "./module/directive-registry";
 export { DirectiveRunner, DirectiveInstance } from "./module/directive-runner";
+export { PipeRegistry } from "./module/pipe-registry";
 
 // Decorators
 export { Component, ComponentOptions } from "./angular/component";
 export { Directive, DirectiveOptions, IDirective } from "./angular/directive";
-export { Pipe, PipeOptions } from "./angular/pipe";
+export { Pipe, PipeOptions, PipeTransform } from "./angular/pipe";
 export { Injectable, InjectableOptions } from "./angular/injectable";
 export { Input, input, createInput, createRequiredInput } from "./angular/input";
 export type { InputSignal, InputOptions } from "./angular/input";

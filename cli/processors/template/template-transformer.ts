@@ -48,7 +48,8 @@ export class TemplateTransformer {
                             parts.push(`'${literal}'`);
                         }
                     }
-                    parts.push(`(${match[1].trim()})`);
+                    const transformedExpr = this.transformPipeExpression(match[1].trim());
+                    parts.push(`(${transformedExpr})`);
                     lastIndex = exprRegex.lastIndex;
                 }
 
@@ -80,8 +81,69 @@ export class TemplateTransformer {
     private transformContentInterpolation(content: string): string {
         return content.replace(
             /\{\{\s*([^}]+?)\s*\}\}/g,
-            (_, expr) => `<span [innerText]="${expr.trim()}"></span>`,
+            (_, expr) => {
+                const transformedExpr = this.transformPipeExpression(expr.trim());
+                return `<span [innerText]="${transformedExpr}"></span>`;
+            },
         );
+    }
+
+    private transformPipeExpression(expression: string): string {
+        const parts = this.splitByPipe(expression);
+
+        if (parts.length === 1) {
+            return expression;
+        }
+
+        let result = parts[0].trim();
+
+        for (let i = 1; i < parts.length; i++) {
+            const pipePart = parts[i].trim();
+            const colonIndex = pipePart.indexOf(':');
+
+            if (colonIndex === -1) {
+                const pipeName = pipePart.trim();
+                result = `this._pipes?.['${pipeName}']?.transform(${result})`;
+            } else {
+                const pipeName = pipePart.substring(0, colonIndex).trim();
+                const argsStr = pipePart.substring(colonIndex + 1).trim();
+                const args = argsStr.split(':').map(arg => arg.trim());
+                const argsJoined = args.join(', ');
+                result = `this._pipes?.['${pipeName}']?.transform(${result}, ${argsJoined})`;
+            }
+        }
+
+        return result;
+    }
+
+    private splitByPipe(expression: string): string[] {
+        const parts: string[] = [];
+        let current = '';
+        let i = 0;
+
+        while (i < expression.length) {
+            const char = expression[i];
+
+            if (char === '|') {
+                if (i + 1 < expression.length && expression[i + 1] === '|') {
+                    current += '||';
+                    i += 2;
+                } else {
+                    parts.push(current);
+                    current = '';
+                    i++;
+                }
+            } else {
+                current += char;
+                i++;
+            }
+        }
+
+        if (current) {
+            parts.push(current);
+        }
+
+        return parts.length > 0 ? parts : [expression];
     }
 
     transformControlFlowIf(content: string): string {

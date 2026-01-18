@@ -40,18 +40,24 @@ export class DirectiveCollectorProcessor extends BaseProcessor {
             }
 
             const importsContent = importsMatch[1];
-            const importNames = this.parseImportNames(importsContent);
+            const { directives, pipes } = this.categorizeImports(importsContent, source);
 
-            if (importNames.length === 0) {
-                continue;
+            let insert = '';
+
+            if (directives.length > 0) {
+                insert += `\n    static _quarcDirectives = [${directives.join(', ')}];`;
             }
 
-            const directivesProperty = `\n    static _quarcDirectives = [${importNames.join(', ')}];`;
+            if (pipes.length > 0) {
+                insert += `\n    static _quarcPipes = [${pipes.join(', ')}];`;
+            }
 
-            replacements.push({
-                position: scopeIdEnd,
-                insert: directivesProperty,
-            });
+            if (insert) {
+                replacements.push({
+                    position: scopeIdEnd,
+                    insert,
+                });
+            }
         }
 
         for (let i = replacements.length - 1; i >= 0; i--) {
@@ -61,6 +67,36 @@ export class DirectiveCollectorProcessor extends BaseProcessor {
         }
 
         return modified ? this.changed(source) : this.noChange(source);
+    }
+
+    private categorizeImports(importsContent: string, source: string): { directives: string[]; pipes: string[] } {
+        const importNames = this.parseImportNames(importsContent);
+        const directives: string[] = [];
+        const pipes: string[] = [];
+
+        for (const name of importNames) {
+            if (this.isPipe(name, source)) {
+                pipes.push(name);
+            } else {
+                directives.push(name);
+            }
+        }
+
+        return { directives, pipes };
+    }
+
+    private isPipe(className: string, source: string): boolean {
+        const classPattern = new RegExp(`class\\s+${className}\\s*(?:extends|implements|\\{)`);
+        const classMatch = source.match(classPattern);
+
+        if (!classMatch) {
+            return false;
+        }
+
+        const beforeClass = source.substring(0, classMatch.index!);
+        const pipeDecoratorPattern = new RegExp(`static\\s+_quarcPipe\\s*=.*?${className}`, 's');
+
+        return pipeDecoratorPattern.test(source);
     }
 
     private parseImportNames(importsContent: string): string[] {

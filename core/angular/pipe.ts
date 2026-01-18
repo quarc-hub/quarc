@@ -11,6 +11,14 @@ export interface PipeOptions {
 }
 
 /**
+ * Interfejs dla pipe transformacji.
+ * Każdy pipe musi implementować metodę transform.
+ */
+export interface PipeTransform {
+  transform(value: any, ...args: any[]): any;
+}
+
+/**
  * Dekorator pipe.
  *
  * Ten dekorator służy wyłącznie do zapewnienia poprawności typów w TypeScript

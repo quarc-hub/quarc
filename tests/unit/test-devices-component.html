@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Devices Component</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .device.card {
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #444;
+        }
+        #test-output {
+            background: #252526;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test: Devices Component Rendering</h1>
+    <div id="app-container"></div>
+    <div id="test-output"></div>
+
+    <script type="module">
+        import { runDevicesComponentTests } from './compiled/test-devices-component.js';
+
+        const output = document.getElementById('test-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = (...args) => {
+            originalLog(...args);
+            output.textContent += args.join(' ') + '\n';
+        };
+
+        console.error = (...args) => {
+            originalError(...args);
+            output.textContent += 'ERROR: ' + args.join(' ') + '\n';
+        };
+
+        runDevicesComponentTests();
+    </script>
+</body>
+</html>

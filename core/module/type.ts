@@ -7,6 +7,7 @@ export interface Type<T> {
 export interface ComponentType<T> extends Type<T> {
     _quarcComponent: [ComponentOptions];
     _quarcDirectives?: DirectiveType<any>[];
+    _quarcPipes?: Type<any>[];
     _scopeId: string;
 }
 
