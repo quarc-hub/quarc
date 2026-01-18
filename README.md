@@ -113,6 +113,14 @@ bootstrapApplication(AppComponent, {
             }
         }
     },
+    "serve": {
+        "proxy": {
+            "/api/*": {
+                "target": "http://localhost:3000",
+                "changeOrigin": true
+            }
+        }
+    },
     "environments": {
         "development": {
             "minifyNames": true,
@@ -328,6 +336,84 @@ export class HighlightDirective {
 **Note:** `@HostBinding` and `@HostListener` decorators exist for TypeScript compatibility but are processed at compile-time. Use the `host` property in directive options for runtime behavior.
 
 ## 🔧 Advanced Features
+
+### Development Server Proxy
+
+The development server supports proxying HTTP requests to a backend server. This is useful when your frontend needs to communicate with an API during development.
+
+**Configuration in quarc.json:**
+
+```json
+{
+    "serve": {
+        "proxy": {
+            "/api/*": {
+                "target": "http://192.168.1.100:8080",
+                "changeOrigin": true
+            },
+            "/auth/*": {
+                "target": "https://auth.example.com",
+                "changeOrigin": true,
+                "pathRewrite": {
+                    "^/auth": "/api/v1/auth"
+                }
+            }
+        }
+    }
+}
+```
+
+**Proxy Options:**
+
+- **Pattern matching**: Use wildcards (`*`) to match request paths
+  - `/api/*` matches `/api/users`, `/api/data`, etc.
+  - `/v1/*/data` matches `/v1/users/data`, `/v1/products/data`, etc.
+
+- **target**: Backend server URL (required)
+  - Can be HTTP or HTTPS
+  - Include protocol and host, optionally port
+
+- **changeOrigin**: Set to `true` to change the `Host` header to match the target (recommended for most cases)
+
+- **pathRewrite**: Object with regex patterns to rewrite request paths
+  - Key: regex pattern to match
+  - Value: replacement string
+
+**Example Use Cases:**
+
+```json
+{
+    "serve": {
+        "proxy": {
+            "/api/*": {
+                "target": "http://localhost:3000",
+                "changeOrigin": true
+            }
+        }
+    }
+}
+```
+
+When your app makes a request to `http://localhost:4200/api/users`, it will be proxied to `http://localhost:3000/api/users`.
+
+**Perfect for ESP32 Development:**
+
+When developing for ESP32, you can proxy API requests to the device:
+
+```json
+{
+    "serve": {
+        "proxy": {
+            "/api/*": {
+                "target": "http://192.168.1.50",
+                "changeOrigin": true
+            }
+        }
+    }
+}
+```
+
+This allows you to develop your frontend locally while testing against the actual ESP32 backend.
 
 ### Lazy Loading
 

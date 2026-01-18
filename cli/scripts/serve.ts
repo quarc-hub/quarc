@@ -10,6 +10,7 @@ import { BaseBuilder } from './base-builder';
 import {
   StaticPath,
   StaticRemotePath,
+  ProxyConfig,
 } from '../types';
 
 class Server extends BaseBuilder {
@@ -159,6 +160,82 @@ class Server extends BaseBuilder {
     return this.config.serve?.staticPaths || [];
   }
 
+  private getProxyConfig(): ProxyConfig {
+    return this.config.serve?.proxy || {};
+  }
+
+  private matchProxyPath(reqUrl: string): { pattern: string; config: { target: string; changeOrigin?: boolean; pathRewrite?: { [key: string]: string } } } | null {
+    const proxyConfig = this.getProxyConfig();
+
+    for (const [pattern, config] of Object.entries(proxyConfig)) {
+      const regexPattern = pattern.replace(/\*/g, '.*');
+      const regex = new RegExp(`^${regexPattern}`);
+
+      if (regex.test(reqUrl)) {
+        return { pattern, config };
+      }
+    }
+
+    return null;
+  }
+
+  private tryProxyRequest(reqUrl: string, req: http.IncomingMessage, res: http.ServerResponse): boolean {
+    const match = this.matchProxyPath(reqUrl);
+
+    if (!match) {
+      return false;
+    }
+
+    const { pattern, config } = match;
+    let targetPath = reqUrl;
+
+    if (config.pathRewrite) {
+      for (const [from, to] of Object.entries(config.pathRewrite)) {
+        const fromRegex = new RegExp(from);
+        targetPath = targetPath.replace(fromRegex, to);
+      }
+    }
+
+    const targetUrl = config.target + targetPath;
+
+    if (this.isVerbose()) {
+      console.log(`[Proxy] ${req.method} ${reqUrl} -> ${targetUrl}`);
+    }
+
+    const parsedUrl = new URL(targetUrl);
+    const protocol = parsedUrl.protocol === 'https:' ? https : http;
+
+    const headers: http.OutgoingHttpHeaders = { ...req.headers };
+
+    if (config.changeOrigin) {
+      headers.host = parsedUrl.host;
+    }
+
+    const proxyReq = protocol.request(
+      targetUrl,
+      {
+        method: req.method,
+        headers,
+      },
+      (proxyRes) => {
+        if (this.isVerbose()) {
+          console.log(`[Proxy] Response: ${proxyRes.statusCode} for ${req.url}`);
+        }
+        res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+        proxyRes.pipe(res);
+      },
+    );
+
+    proxyReq.on('error', (err) => {
+      console.error(`[Proxy] Error for ${req.url}:`, err.message);
+      res.writeHead(502);
+      res.end('Bad Gateway');
+    });
+
+    req.pipe(proxyReq);
+    return true;
+  }
+
   private proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse): void {
     console.log(`[Proxy] ${req.method} ${req.url} -> ${targetUrl}`);
     const parsedUrl = new URL(targetUrl);
@@ -244,6 +321,10 @@ class Server extends BaseBuilder {
   private startHttpServer(port: number): void {
     this.httpServer = http.createServer((req, res) => {
       const reqUrl = req.url || '/';
+
+      if (this.tryProxyRequest(reqUrl, req, res)) {
+        return;
+      }
 
       if (this.tryServeStaticPath(reqUrl, req, res)) {
         return;

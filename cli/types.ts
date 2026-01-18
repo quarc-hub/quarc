@@ -32,6 +32,14 @@ export interface StaticRemotePath {
 
 export type StaticPath = StaticLocalPath | StaticRemotePath;
 
+export interface ProxyConfig {
+  [path: string]: {
+    target: string;
+    changeOrigin?: boolean;
+    pathRewrite?: { [key: string]: string };
+  };
+}
+
 export interface ActionsConfig {
   prebuild?: string[];
   postbuild?: string[];
@@ -57,6 +65,7 @@ export interface BuildConfig {
 export interface ServeConfig {
   actions?: ActionsConfig;
   staticPaths?: StaticPath[];
+  proxy?: ProxyConfig;
 }
 
 export interface QuarcConfig {
