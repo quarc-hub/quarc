@@ -58,45 +58,5 @@
 <body>
     <app-root></app-root>
     <script type="module" src="./main.js"></script>
-
-  <script>
-    (function() {
-      let ws;
-      let reconnectAttempts = 0;
-      const maxReconnectDelay = 5000;
-
-      function connect() {
-        ws = new WebSocket('ws://localhost:4200/qu-ws/');
-
-        ws.onopen = () => {
-          console.log('[Live Reload] Connected');
-          reconnectAttempts = 0;
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            if (message.type === 'reload') {
-              console.log('[Live Reload] Reloading page...');
-              window.location.reload();
-            }
-          } catch {}
-        };
-
-        ws.onclose = () => {
-          console.warn('[Live Reload] Connection lost, attempting to reconnect...');
-          reconnectAttempts++;
-          const delay = Math.min(1000 * reconnectAttempts, maxReconnectDelay);
-          setTimeout(connect, delay);
-        };
-
-        ws.onerror = () => {
-          ws.close();
-        };
-      }
-
-      connect();
-    })();
-  </script>
 </body>
 </html>

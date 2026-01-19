@@ -41,17 +41,25 @@
         "development": {
             "treatWarningsAsErrors": false,
             "minifyNames": false,
+            "minifyTemplate": false,
             "generateSourceMaps": true,
             "compressed": false,
+            "removeComments": false,
+            "removeConsole": false,
+            "aggressiveTreeShaking": false,
             "devServer": {
                 "port": 4200
             }
         },
         "production": {
             "treatWarningsAsErrors": false,
-            "minifyNames": false,
+            "minifyNames": true,
+            "minifyTemplate": true,
             "generateSourceMaps": false,
-            "compressed": false
+            "compressed": true,
+            "removeComments": true,
+            "removeConsole": true,
+            "aggressiveTreeShaking": true
         }
     }
 }

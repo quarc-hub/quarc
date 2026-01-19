@@ -1,7 +1,10 @@
+import { QuarcConfig } from '../types';
+
 export interface ProcessorContext {
     filePath: string;
     fileDir: string;
     source: string;
+    config?: QuarcConfig;
 }
 
 export interface ProcessorResult {

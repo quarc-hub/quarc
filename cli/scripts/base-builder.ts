@@ -137,6 +137,14 @@ export abstract class BaseBuilder {
       if (this.isVerbose()) console.log('Bundling TypeScript with esbuild...');
       const mainTsPath = path.join(this.srcDir, 'main.ts');
 
+      const dropList: ('console' | 'debugger')[] = this.envConfig.removeConsole
+        ? ['console', 'debugger']
+        : (this.config.environment === 'production' ? ['console', 'debugger'] : ['debugger']);
+
+      const pureList = this.envConfig.removeConsole
+        ? ['console.log', 'console.error', 'console.warn', 'console.info', 'console.debug', 'console.trace']
+        : (this.config.environment === 'production' ? ['console.log', 'console.error', 'console.warn', 'console.info', 'console.debug'] : []);
+
       await esbuild.build({
         entryPoints: [mainTsPath],
         bundle: true,
@@ -148,16 +156,18 @@ export abstract class BaseBuilder {
         splitting: true,
         chunkNames: 'chunks/[name]-[hash]',
         external: [],
-        plugins: [quarcTransformer(), consoleTransformer()],
+        plugins: [quarcTransformer(undefined, this.config), consoleTransformer(this.envConfig)],
         tsconfig: path.join(this.projectRoot, 'tsconfig.json'),
-        treeShaking: true,
+        treeShaking: this.envConfig.aggressiveTreeShaking ?? true,
+        ignoreAnnotations: this.envConfig.aggressiveTreeShaking ?? false,
         logLevel: this.isVerbose() ? 'info' : 'silent',
         define: {
           'process.env.NODE_ENV': this.config.environment === 'production' ? '"production"' : '"development"',
         },
-        drop: this.config.environment === 'production' ? ['console', 'debugger'] : ['debugger'],
-        pure: this.config.environment === 'production' ? ['console.log', 'console.error', 'console.warn', 'console.info', 'console.debug'] : [],
+        drop: dropList,
+        pure: pureList,
         globalName: undefined,
+        legalComments: this.envConfig.removeComments ? 'none' : 'inline',
       });
 
       if (this.isVerbose()) console.log('TypeScript bundling completed.');
@@ -200,7 +210,7 @@ export abstract class BaseBuilder {
         target: 'ES2020',
         splitting: false,
         external: [],
-        plugins: [quarcTransformer(), consoleTransformer()],
+        plugins: [quarcTransformer(undefined, this.config), consoleTransformer(this.envConfig)],
         tsconfig: path.join(this.projectRoot, 'tsconfig.json'),
         treeShaking: true,
         logLevel: this.isVerbose() ? 'info' : 'silent',

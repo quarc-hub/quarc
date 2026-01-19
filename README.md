@@ -123,9 +123,13 @@ bootstrapApplication(AppComponent, {
     },
     "environments": {
         "development": {
-            "minifyNames": true,
-            "generateSourceMaps": false,
-            "compressed": true,
+            "minifyNames": false,
+            "minifyTemplate": false,
+            "generateSourceMaps": true,
+            "compressed": false,
+            "removeComments": false,
+            "removeConsole": false,
+            "aggressiveTreeShaking": false,
             "devServer": {
                 "port": 4200
             }
@@ -133,8 +137,12 @@ bootstrapApplication(AppComponent, {
         "production": {
             "treatWarningsAsErrors": true,
             "minifyNames": true,
+            "minifyTemplate": true,
             "generateSourceMaps": false,
-            "compressed": true
+            "compressed": true,
+            "removeComments": true,
+            "removeConsole": true,
+            "aggressiveTreeShaking": true
         }
     }
 }
@@ -759,6 +767,40 @@ Quarc is optimized for embedded devices with limited resources:
 - **Routers** - OpenWrt and similar embedded Linux systems
 - **IoT Devices** - Smart home controllers, sensors, displays
 - **Industrial Controllers** - HMI panels, PLCs with web interfaces
+
+## ⚡ Optimization for Embedded Devices
+
+Quarc provides advanced optimization options specifically designed for devices with limited memory:
+
+### Optimization Options
+
+- **`minifyTemplate`** - Minifies HTML templates (removes comments, whitespace)
+- **`removeConsole`** - Removes all console.* calls from code
+- **`removeComments`** - Removes all comments including licenses
+- **`aggressiveTreeShaking`** - More aggressive dead code elimination
+- **`minifyNames`** - Minifies variable and function names
+- **`compressed`** - Gzip compression
+
+### Example Configuration for ESP32
+
+```json
+{
+  "environments": {
+    "production": {
+      "minifyNames": true,
+      "minifyTemplate": true,
+      "removeConsole": true,
+      "removeComments": true,
+      "aggressiveTreeShaking": true,
+      "compressed": true
+    }
+  }
+}
+```
+
+**Expected bundle size:** 5-25 KB (depending on features)
+
+See [OPTIMIZATION.md](./cli/OPTIMIZATION.md) for detailed documentation.
 
 ## 🛠️ CLI Commands
 

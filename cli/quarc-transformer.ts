@@ -9,6 +9,7 @@ import { ClassDecoratorProcessor } from './processors/class-decorator-processor'
 import { SignalTransformerProcessor, SignalTransformerError } from './processors/signal-transformer-processor';
 import { DirectiveCollectorProcessor } from './processors/directive-collector-processor';
 import { InjectProcessor } from './processors/inject-processor';
+import { QuarcConfig } from './types';
 
 export class BuildError extends Error {
     constructor(
@@ -24,8 +25,10 @@ export class BuildError extends Error {
 
 export class QuarcTransformer {
     private processors: BaseProcessor[];
+    private config?: QuarcConfig;
 
-    constructor(processors?: BaseProcessor[]) {
+    constructor(processors?: BaseProcessor[], config?: QuarcConfig) {
+        this.config = config;
         this.processors = processors || [
             new ClassDecoratorProcessor(),
             new SignalTransformerProcessor(),
@@ -72,6 +75,7 @@ export class QuarcTransformer {
                                 filePath: args.path,
                                 fileDir,
                                 source: currentSource,
+                                config: this.config,
                             });
 
                             if (result.modified) {
@@ -119,7 +123,7 @@ export class QuarcTransformer {
     }
 }
 
-export function quarcTransformer(processors?: BaseProcessor[]): esbuild.Plugin {
-    const transformer = new QuarcTransformer(processors);
+export function quarcTransformer(processors?: BaseProcessor[], config?: QuarcConfig): esbuild.Plugin {
+    const transformer = new QuarcTransformer(processors, config);
     return transformer.createPlugin();
 }

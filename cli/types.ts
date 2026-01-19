@@ -6,8 +6,12 @@ export interface SizeThreshold {
 export interface EnvironmentConfig {
   treatWarningsAsErrors: boolean;
   minifyNames: boolean;
+  minifyTemplate?: boolean;
   generateSourceMaps: boolean;
   compressed?: boolean;
+  removeComments?: boolean;
+  removeConsole?: boolean;
+  aggressiveTreeShaking?: boolean;
   devServer?: DevServerConfig;
 }
 

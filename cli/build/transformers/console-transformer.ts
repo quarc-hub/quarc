@@ -1,6 +1,7 @@
 import { Plugin } from 'esbuild';
+import { EnvironmentConfig } from '../../types';
 
-export function consoleTransformer(): Plugin {
+export function consoleTransformer(envConfig?: EnvironmentConfig): Plugin {
     return {
         name: 'console-transformer',
         setup(build) {
@@ -8,7 +9,20 @@ export function consoleTransformer(): Plugin {
                 const fs = await import('fs');
                 const contents = fs.readFileSync(args.path, 'utf8');
 
-                // Zastąp console.* z krótszymi zmiennymi
+                if (envConfig?.removeConsole) {
+                    const transformed = contents
+                        .replace(/console\.log\([^)]*\);?/g, '/* removed */')
+                        .replace(/console\.error\([^)]*\);?/g, '/* removed */')
+                        .replace(/console\.warn\([^)]*\);?/g, '/* removed */')
+                        .replace(/console\.info\([^)]*\);?/g, '/* removed */')
+                        .replace(/console\.debug\([^)]*\);?/g, '/* removed */');
+
+                    return {
+                        contents: transformed,
+                        loader: 'ts'
+                    };
+                }
+
                 let transformed = contents
                     .replace(/console\.log/g, '_log')
                     .replace(/console\.error/g, '_error')
@@ -16,10 +30,8 @@ export function consoleTransformer(): Plugin {
                     .replace(/console\.info/g, '_info')
                     .replace(/console\.debug/g, '_debug');
 
-                // Dodaj deklaracje na początku pliku jeśli są używane
                 if (transformed !== contents) {
                     const declarations = `
-// Console shortcuts for size optimization
 const _log = console.log;
 const _error = console.error;
 const _warn = console.warn;
