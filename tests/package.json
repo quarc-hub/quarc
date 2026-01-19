@@ -1,0 +1,25 @@
+{
+  "name": "quarc-tests",
+  "version": "1.0.0",
+  "description": "Playwright test suite for Quarc Framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test playwright/e2e",
+    "test:unit": "playwright test playwright/unit",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "pretest": "cd e2e/app && npm install"
+  },
+  "keywords": ["quarc", "testing", "playwright", "e2e"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.9",
+    "playwright": "^1.57.0",
+    "typescript": "^5.9.3"
+  }
+}
